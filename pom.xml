@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.tibudget</groupId>
 	<artifactId>tibudget-collector-stubbed</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.5</version>
 	<packaging>jar</packaging>
 
 	<name>Stubbed collector plugin</name>
@@ -16,7 +16,8 @@
 		<connection>scm:git:ssh://git@git.cloudbees.com/tibudget/tibudget-collector-stubbed.git</connection>
 		<url>https://git.cloudbees.com/tibudget/tibudget-collector-stubbed.git</url>
 		<developerConnection>scm:git:ssh://git@git.cloudbees.com/tibudget/tibudget-collector-stubbed.git</developerConnection>
-	</scm>
+	  <tag>tibudget-collector-stubbed-0.0.5</tag>
+  </scm>
 
 	<distributionManagement>
 		<repository>
