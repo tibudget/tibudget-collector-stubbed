@@ -141,6 +141,7 @@
 							<Implementation-Version>${project.version}</Implementation-Version>
 							<Implementation-VersionCode>1</Implementation-VersionCode>
 							<Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+							<TiBudget-DefaultLocale>en</TiBudget-DefaultLocale>
 						</manifestEntries>
 					</archive>
 				</configuration>
@@ -157,6 +158,7 @@
 							<Implementation-Version>${project.version}</Implementation-Version>
 							<Implementation-VersionCode>1</Implementation-VersionCode>
 							<Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+							<TiBudget-DefaultLocale>en</TiBudget-DefaultLocale>
 						</manifestEntries>
 					</archive>
 					<descriptorRefs>
