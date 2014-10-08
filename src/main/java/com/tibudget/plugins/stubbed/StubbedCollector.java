@@ -132,7 +132,7 @@ public class StubbedCollector implements ICollectorPlugin {
 		switch (type) {
 		case OPERATIONS:
 			if (this.bankAccount == null) {
-				this.bankAccount = new BankAccountDto(com.tibudget.dto.BankAccountDto.Type.BANK_CHECKING, "Stubbed account", "Stubbed collector", 0.0);
+				this.bankAccount = new BankAccountDto(UUID.randomUUID().toString(), com.tibudget.dto.BankAccountDto.Type.BANK_CHECKING, "Stubbed account", "Stubbed collector", 0.0);
 			}
 			if (beginDate == null) {
 				beginDate = new Date();

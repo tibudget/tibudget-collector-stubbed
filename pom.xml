@@ -50,7 +50,7 @@
 		<downloadSources>true</downloadSources>
 
 		<spring.version>3.1.2.RELEASE</spring.version>
-		<tibudget.api.version>0.0.8</tibudget.api.version>
+		<tibudget.api.version>0.0.9-SNAPSHOT</tibudget.api.version>
 	</properties>
 
 	<dependencies>
