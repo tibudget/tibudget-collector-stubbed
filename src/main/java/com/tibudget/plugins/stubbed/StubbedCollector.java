@@ -235,7 +235,7 @@ public class StubbedCollector implements CollectorPlugin {
 		purchase.setValue(amount);
 		purchase.addPaiment(new PaymentDto(
 				PaymentDto.PaymentDtoType.CARD,
-				"",
+				"Visa",
 				datePurchase,
 				amount,
 				"EUR",

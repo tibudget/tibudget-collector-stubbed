@@ -37,7 +37,7 @@ public class FileGenerator {
 
         // Create a temporary file with the correct extension
         String extension = resourceName.substring(resourceName.lastIndexOf("."));
-        File tempFile = File.createTempFile("product_image_", extension);
+        File tempFile = File.createTempFile("tibu_stubbed_", extension);
 
         // Copy the resource content into the temp file
         try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
