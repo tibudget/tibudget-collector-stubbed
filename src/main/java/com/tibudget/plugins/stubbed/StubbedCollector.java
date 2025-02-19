@@ -52,7 +52,7 @@ public class StubbedCollector implements CollectorPlugin {
 	@Input(fieldset="type_OPERATIONS", order=1, required = false)
 	private AccountDto accountShopping;
 
-	@Input
+	@Input(required = false)
 	private boolean askForCode = false;
 
 	private OTPProvider otpProvider;
