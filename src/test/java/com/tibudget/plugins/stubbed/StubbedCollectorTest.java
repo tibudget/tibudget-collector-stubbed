@@ -2,6 +2,7 @@ package com.tibudget.plugins.stubbed;
 
 import com.tibudget.api.exceptions.*;
 import com.tibudget.dto.AccountDto;
+import com.tibudget.dto.ItemDto;
 import com.tibudget.dto.OperationDto;
 import com.tibudget.plugins.stubbed.StubbedCollector.Type;
 import org.junit.Assert;
@@ -18,9 +19,51 @@ public class StubbedCollectorTest {
 	public static final double MAX_VALUE = 100000000000.0;
 
 	@Test
+	public void testItem() {
+		ItemDto itemDto = StubbedCollector.generateItem();
+		Assert.assertNotNull(itemDto);
+	}
+
+	@Test
+	public void testOperationPurchase() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.validate();
+		List<OperationDto> operationDtos = collector.generateOperationPurchase();
+		Assert.assertNotNull(operationDtos);
+        Assert.assertEquals(2, operationDtos.size());
+		for (OperationDto operationDto : operationDtos) {
+			Assert.assertNotNull(operationDto);
+		}
+	}
+
+	@Test
+	public void testOperationTransfer() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.validate();
+		List<OperationDto> operationDtos = collector.generateOperationTransfer();
+		Assert.assertNotNull(operationDtos);
+		Assert.assertEquals(2, operationDtos.size());
+		for (OperationDto operationDto : operationDtos) {
+			Assert.assertNotNull(operationDto);
+		}
+	}
+
+	@Test
+	public void testOperationInterne() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.validate();
+		List<OperationDto> operationDtos = collector.generateOperationInterne();
+		Assert.assertNotNull(operationDtos);
+		Assert.assertEquals(1, operationDtos.size());
+		for (OperationDto operationDto : operationDtos) {
+			Assert.assertNotNull(operationDto);
+		}
+	}
+
+	@Test
 	public void testRandom() throws MessagesException {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccount(new AccountDto(UUID.randomUUID().toString(), AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(UUID.randomUUID().toString(), AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
 		Date beginDate = new Date();
 		// one week
 		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
@@ -33,7 +76,6 @@ public class StubbedCollectorTest {
 		collector.collect(Collections.emptyList());
 		Assert.assertNotNull(collector.getAccounts());
 		int opCount = 0;
-		OperationDto lastOpDto = null;
 		for (OperationDto opDto : collector.getOperations()) {
 			LOG.log(Level.FINE, "dateOp=" + opDto.getDateOperation() + " dateVal=" + opDto.getDateValue() + " val=" + opDto.getValue());
 			Assert.assertNotNull("value date", opDto.getDateValue());
@@ -46,26 +88,19 @@ public class StubbedCollectorTest {
             Assert.assertFalse("label size", opDto.getLabel().trim().isEmpty());
 			Assert.assertNotNull(opDto.getLabel());
 			Assert.assertTrue("value limit", opDto.getValue() <= MAX_VALUE && opDto.getValue() >= -MAX_VALUE);
-			if (lastOpDto != null) {
-				Assert.assertFalse("not so randomized value date", lastOpDto.getDateValue().equals(opDto.getDateValue()));
-				Assert.assertFalse("not so randomized operation date", lastOpDto.getDateOperation().equals(opDto.getDateOperation()));
-				Assert.assertFalse("not so randomized label", lastOpDto.getLabel().equals(opDto.getLabel()));
-				Assert.assertFalse("not so randomized value", lastOpDto.getValue() == opDto.getValue());
-			}
 			opCount++;
 		}
-		Assert.assertEquals("operation count", 50, opCount);
+		Assert.assertEquals("operation count", 50 * 4 + 1, opCount);
 		Assert.assertEquals("progress", 100, collector.getProgress());
 	}
 
 	@Test
 	public void testDefaultAccount() throws MessagesException {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setType(Type.OPERATIONS);
 		Assert.assertEquals("validation messages size", 0, collector.validate().size());
 		collector.collect(Collections.emptyList());
 		Assert.assertNotNull(collector.getAccounts());
-		Assert.assertTrue("getAccounts() must have element", collector.getAccounts().iterator().hasNext());
+		Assert.assertEquals(3, collector.getAccounts().size());
 	}
 
 	@Test(expected=AccessDeny.class)
@@ -120,7 +155,7 @@ public class StubbedCollectorTest {
 	@Test
 	public void testParameterErrorEndDateNull() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccount(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
 		Date beginDate = new Date();
 		collector.setBeginDate(beginDate);
 		collector.setEndDate(null);
@@ -131,7 +166,7 @@ public class StubbedCollectorTest {
 	@Test
 	public void testParameterErrorBadDates() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccount(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
 		Date beginDate = new Date();
 		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
 		collector.setBeginDate(endDate);
@@ -143,7 +178,7 @@ public class StubbedCollectorTest {
 	@Test
 	public void testParameterErrorCorrectCount() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccount(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
 		Date beginDate = new Date();
 		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
 		collector.setBeginDate(beginDate);
@@ -157,7 +192,7 @@ public class StubbedCollectorTest {
 	@Test
 	public void testParameterErrorErrorCount() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccount(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(UUID.randomUUID().toString(), com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
 		Date beginDate = new Date();
 		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
 		collector.setBeginDate(beginDate);
