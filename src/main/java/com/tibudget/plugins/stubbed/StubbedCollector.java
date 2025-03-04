@@ -74,13 +74,18 @@ public class StubbedCollector implements CollectorPlugin {
 		switch (type) {
 			case OPERATIONS:
 				if (this.accountPayment == null) {
-					this.accountPayment = new AccountDto(UUID.randomUUID().toString(), AccountDto.AccountDtoType.PAYMENT, "My checking account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountPayment = new AccountDto(AccountDto.AccountDtoType.PAYMENT, "My checking account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CARD, "1234"));
+					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
+					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CHECK));
+					this.accountPayment.setMetadata(AccountDto.METADATA_IBAN, "FR1234567891234567891234567");
 				}
 				if (this.accountSaving == null) {
-					this.accountSaving = new AccountDto(UUID.randomUUID().toString(), AccountDto.AccountDtoType.SAVING, "My saving account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountSaving.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 				}
 				if (this.accountShopping == null) {
-					this.accountShopping = new AccountDto(UUID.randomUUID().toString(), AccountDto.AccountDtoType.SHOPPING, "My shopping account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 				}
 				if (beginDate == null) {
 					// Default is past 7 days
@@ -146,7 +151,7 @@ public class StubbedCollector implements CollectorPlugin {
 				for (int i = 0; i < this.errorOpCount; i++) {
 					OperationDto opDto = generateOperation();
 					addError(opDto);
-					this.accountPayment.setCurrentBalance(this.accountPayment.getCurrentBalance() + opDto.getValue());
+					this.accountPayment.setCurrentBalance(this.accountPayment.getCurrentBalance() + opDto.getAmount());
 					operations.add(opDto);
 				}
 				break;
@@ -211,7 +216,6 @@ public class StubbedCollector implements CollectorPlugin {
 		Date datePurchase = new Date(beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime())));
 		OperationDto purchase = new OperationDto(
 				accountShopping.getUuid(),
-				UUID.randomUUID().toString(),
 				OperationDto.OperationDtoType.PURCHASE,
 				datePurchase,
 				datePurchase,
@@ -232,21 +236,21 @@ public class StubbedCollector implements CollectorPlugin {
 		}
 		purchase.setDetails(sb.toString());
 		purchase.setLabel(sb.toString());
-		purchase.setValue(amount);
-		purchase.addPaiment(new PaymentDto(
+		purchase.setAmount(amount);
+		purchase.addPayment(new PaymentDto(
 				PaymentDto.PaymentDtoType.CARD,
 				"Visa",
 				datePurchase,
 				amount,
 				"EUR",
 				null,
-				"*-1234"
+				"1234"
 		));
 		if (randomYes(60)) {
 			try {
 				purchase.addFile(new FileDto(
 						FileDto.FileDtoType.INVOICE,
-						"Invoice " + purchase.getIdForCollector(),
+						"Invoice",
 						FileGenerator.getRandomInvoiceFile()
 				));
 			} catch (IOException e) {
@@ -257,7 +261,6 @@ public class StubbedCollector implements CollectorPlugin {
 
 		OperationDto checkOp = new OperationDto(
 				accountPayment.getUuid(),
-				UUID.randomUUID().toString(),
 				OperationDto.OperationDtoType.PAYMENT,
 				datePurchase,
 				datePurchase,
@@ -277,7 +280,6 @@ public class StubbedCollector implements CollectorPlugin {
 		double amount = randomPrice();
 		OperationDto checkingOp = new OperationDto(
 				accountPayment.getUuid(),
-				UUID.randomUUID().toString(),
 				OperationDto.OperationDtoType.TRANSFER,
 				dateOperation,
 				dateOperation,
@@ -290,7 +292,6 @@ public class StubbedCollector implements CollectorPlugin {
 
 		OperationDto savingOp = new OperationDto(
 				accountSaving.getUuid(),
-				UUID.randomUUID().toString(),
 				OperationDto.OperationDtoType.TRANSFER,
 				dateOperation,
 				dateOperation,
@@ -310,7 +311,6 @@ public class StubbedCollector implements CollectorPlugin {
 		double amount = randomPrice();
 		OperationDto savingOp = new OperationDto(
 				accountSaving.getUuid(),
-				UUID.randomUUID().toString(),
 				OperationDto.OperationDtoType.INTERNAL,
 				dateOperation,
 				dateOperation,
@@ -330,7 +330,6 @@ public class StubbedCollector implements CollectorPlugin {
 		OperationDto.OperationDtoType type = getOperationDtoType(dateOperation);
 		return new OperationDto(
 				accountPayment.getUuid(),
-                UUID.randomUUID().toString(),
                 type,
                 new Date(dateOperation),
                 new Date(dateValue),
@@ -413,21 +412,21 @@ public class StubbedCollector implements CollectorPlugin {
 				break;
 			case 6:
 				// Divide by 1000 to not have overflow into balance
-				dto.setValue(Double.MAX_VALUE/1000);
-				LOG.log(Level.FINE, "Adding error: value = " + dto.getValue());
+				dto.setAmount(Double.MAX_VALUE/1000);
+				LOG.log(Level.FINE, "Adding error: value = " + dto.getAmount());
 				break;
 			case 7:
 				// Divide by 1000 to not have overflow into balance
-				dto.setValue(-Double.MAX_VALUE/1000);
-				LOG.log(Level.FINE, "Adding error: value = " + dto.getValue());
+				dto.setAmount(-Double.MAX_VALUE/1000);
+				LOG.log(Level.FINE, "Adding error: value = " + dto.getAmount());
 				break;
 			case 8:
 				LOG.log(Level.FINE, "Adding error: account = foo");
 				dto.setAccountUuid("foo");
 				break;
 			case 9:
-				dto.setValue(0.0);
-				LOG.log(Level.FINE, "Adding error: value = " + dto.getValue());
+				dto.setAmount(0.0);
+				LOG.log(Level.FINE, "Adding error: value = " + dto.getAmount());
 				break;
 			default:
 				LOG.log(Level.FINE, "Adding error: date value = null");
