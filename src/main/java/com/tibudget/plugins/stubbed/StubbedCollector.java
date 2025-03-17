@@ -61,6 +61,8 @@ public class StubbedCollector implements CollectorPlugin {
 
 	private final List<OperationDto> operations = new ArrayList<>();
 
+	private final List<AccountDto> accounts = new ArrayList<>();
+
 	/**
 	 * Random instance for generating random values
 	 */
@@ -489,6 +491,19 @@ public class StubbedCollector implements CollectorPlugin {
 
 	public void setParameterErrorField(String parameterErrorField) {
 		this.parameterErrorField = parameterErrorField;
+	}
+
+	@Override
+	public void setAccounts(List<AccountDto> list) {
+		this.accounts.addAll(list);
+	}
+
+	public void setOtpProvider(OTPProvider otpProvider) {
+		this.otpProvider = otpProvider;
+	}
+
+	public void setProgress(Double progress) {
+		this.progress = progress;
 	}
 
 	public void setAccountPayment(AccountDto accountPayment) {
