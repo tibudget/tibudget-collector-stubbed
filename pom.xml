@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.tibudget</groupId>
     <artifactId>tibudget-collector-stubbed</artifactId>
-    <version>0.0.17-SNAPSHOT</version>
+    <version>0.0.17</version>
     <packaging>jar</packaging>
 
     <name>Stubbed collector plugin</name>
@@ -16,7 +16,7 @@
 
     <scm>
         <connection>scm:git:https://github.com/tibudget/tibudget-collector-stubbed.git</connection>
-        <tag>HEAD</tag>
+        <tag>tibudget-collector-stubbed-0.0.17</tag>
     </scm>
 
     <distributionManagement>
