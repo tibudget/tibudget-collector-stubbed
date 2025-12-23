@@ -1,14 +1,13 @@
 package com.tibudget.plugins.stubbed;
 
-import com.tibudget.api.CollectorPlugin;
-import com.tibudget.api.Input;
-import com.tibudget.api.OTPProvider;
+import com.tibudget.api.*;
 import com.tibudget.api.exceptions.*;
 import com.tibudget.dto.*;
 import com.tibudget.dto.MessageDto.MessageType;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
@@ -59,7 +58,7 @@ public class StubbedCollector implements CollectorPlugin {
 
 	private Double progress = 0.0;
 
-	private final List<OperationDto> operations = new ArrayList<>();
+	private final List<TransactionDto> operations = new ArrayList<>();
 
 	private final List<AccountDto> accounts = new ArrayList<>();
 
@@ -67,6 +66,28 @@ public class StubbedCollector implements CollectorPlugin {
 	 * Random instance for generating random values
 	 */
 	private static final Random RANDOM = new Random();
+
+	@Override
+	public void init(InternetProvider internetProvider,
+					 CounterpartyProvider counterpartyProvider,
+					 OTPProvider otpProvider,
+					 PDFToolsProvider pdfToolsProvider,
+					 Map<String, String> settings,
+					 Map<String, String> previousCookies,
+					 List<AccountDto> previousAccounts) {
+		this.otpProvider = otpProvider;
+		this.accounts.addAll(previousAccounts);
+	}
+
+	@Override
+	public String initConnection(URI uri) {
+		return "";
+	}
+
+	@Override
+	public String getOpenIdJSONConfiguration() {
+		return CollectorPlugin.super.getOpenIdJSONConfiguration();
+	}
 
 	public List<MessageDto> validate() {
 		List<MessageDto> msg = new ArrayList<>();
@@ -81,13 +102,26 @@ public class StubbedCollector implements CollectorPlugin {
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CHECK));
 					this.accountPayment.setMetadata(AccountDto.METADATA_IBAN, "FR1234567891234567891234567");
+					this.accounts.add(this.accountPayment);
 				}
 				if (this.accountSaving == null) {
 					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountSaving.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
+					this.accounts.add(this.accountSaving);
 				}
 				if (this.accountShopping == null) {
-					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
+					LoyaltyCardDto card = new LoyaltyCardDto();
+					card.setBarcodeType(LoyaltyCardDto.BarcodeType.CODE_128);
+					card.setReference("123456789012");
+					card.setIssuer("Myshop.com");
+                    try {
+                        card.setCover(new FileDto(FileDto.FileDtoType.IMAGE, "Card cover", "image/png", FileGenerator.copyResourceToTempFile("loyalty-card.png")));
+                    } catch (IOException e) {
+                        LOG.log(Level.SEVERE, "Cannot load loyalty card cover: " + e.getMessage(), e);
+                    }
+                    this.accountShopping.addLoyaltyCard(card);
+					this.accounts.add(this.accountShopping);
 				}
 				if (beginDate == null) {
 					// Default is past 7 days
@@ -122,7 +156,8 @@ public class StubbedCollector implements CollectorPlugin {
 		return msg;
 	}
 
-	public void collect(Iterable<AccountDto> accounts) throws CollectError, AccessDeny, TemporaryUnavailable, ConnectionFailure, ParameterError {
+	@Override
+	public void collect() throws CollectError, AccessDeny, TemporaryUnavailable, ConnectionFailure, ParameterError {
 		progress = 0.0;
 		if (askForCode && otpProvider != null) {
 			String otpCode = otpProvider.getCode(OTPProvider.Channel.SMS, "the keyword", OTPProvider.PATTERN_6_DIGIT, "The stubbed collector need a code, please provide one");
@@ -151,7 +186,7 @@ public class StubbedCollector implements CollectorPlugin {
 					operations.addAll(generateOperationTransfer());
 				}
 				for (int i = 0; i < this.errorOpCount; i++) {
-					OperationDto opDto = generateOperation();
+					TransactionDto opDto = generateOperation();
 					addError(opDto);
 					this.accountPayment.setCurrentBalance(this.accountPayment.getCurrentBalance() + opDto.getAmount());
 					operations.add(opDto);
@@ -169,24 +204,20 @@ public class StubbedCollector implements CollectorPlugin {
 		progress = 100.0;
 	}
 
+	@Override
+	public Map<String, String> getSettings() {
+		return Map.of();
+	}
+
 	public List<AccountDto> getAccounts() {
-		List<AccountDto> accounts = new ArrayList<>();
 		if (type == Type.ERR_RuntimeAccount) {
 			throw new RuntimeException("Simulated runtime exception in getAccounts()");
-		}
-		if (accountPayment != null) {
-			accounts.add(accountPayment);
-		}
-		if (accountSaving != null) {
-			accounts.add(accountSaving);
-		}
-		if (accountShopping != null) {
-			accounts.add(accountShopping);
 		}
 		return accounts;
 	}
 
-	public List<OperationDto> getOperations() {
+	@Override
+	public List<TransactionDto> getTransactions() {
 		if (type == Type.ERR_RuntimeOperation) {
 			throw new RuntimeException("Simulated runtime exception in getOperations()");
 		}
@@ -198,32 +229,24 @@ public class StubbedCollector implements CollectorPlugin {
 	}
 
 	@Override
-	public void setOTPProvider(OTPProvider otpProvider) {
-		this.otpProvider = otpProvider;
-	}
-
-	@Override
-	public void setCookies(Map<String, String> cookies) {
-		// No cookies needed by this collector
-	}
-
-	@Override
 	public Map<String, String> getCookies() {
 		// No cookies needed by this collector
 		return Map.of();
 	}
 
-	public List<OperationDto> generateOperationPurchase() {
-		List<OperationDto> operationsDtos = new ArrayList<>();
+	public List<TransactionDto> generateOperationPurchase() {
+		List<TransactionDto> operationsDtos = new ArrayList<>();
 		Date datePurchase = new Date(beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime())));
-		OperationDto purchase = new OperationDto(
+		TransactionDto purchase = new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountShopping.getUuid(),
-				OperationDto.OperationDtoType.PURCHASE,
+				TransactionDto.TransactionDtoType.PURCHASE,
 				datePurchase,
 				datePurchase,
 				OperationLabelGenerator.generateOperationLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-				RANDOM.nextDouble() * 1000 - 500
+				RANDOM.nextDouble() * 1000 - 500,
+				"EUR"
 		);
 		double amount = 0.0;
 		StringBuilder sb = new StringBuilder();
@@ -253,6 +276,7 @@ public class StubbedCollector implements CollectorPlugin {
 				purchase.addFile(new FileDto(
 						FileDto.FileDtoType.INVOICE,
 						"Invoice",
+						"application/pdf",
 						FileGenerator.getRandomInvoiceFile()
 				));
 			} catch (IOException e) {
@@ -261,14 +285,16 @@ public class StubbedCollector implements CollectorPlugin {
 		}
 		operationsDtos.add(purchase);
 
-		OperationDto checkOp = new OperationDto(
+		TransactionDto checkOp = new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountPayment.getUuid(),
-				OperationDto.OperationDtoType.PAYMENT,
+				TransactionDto.TransactionDtoType.PAYMENT,
 				datePurchase,
 				datePurchase,
 				"Purchase of " + purchase.getLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-				-amount
+				-amount,
+				"EUR"
 		);
 		accountPayment.setCurrentBalance(accountPayment.getCurrentBalance() - amount);
 		operationsDtos.add(checkOp);
@@ -276,30 +302,34 @@ public class StubbedCollector implements CollectorPlugin {
 		return operationsDtos;
 	}
 
-	public List<OperationDto> generateOperationTransfer() {
-		List<OperationDto> operationsDtos = new ArrayList<>();
+	public List<TransactionDto> generateOperationTransfer() {
+		List<TransactionDto> operationsDtos = new ArrayList<>();
 		Date dateOperation = new Date(beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime())));
 		double amount = randomPrice();
-		OperationDto checkingOp = new OperationDto(
+		TransactionDto checkingOp = new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountPayment.getUuid(),
-				OperationDto.OperationDtoType.TRANSFER,
+				TransactionDto.TransactionDtoType.TRANSFER,
 				dateOperation,
 				dateOperation,
 				"Transfer to " + accountSaving.getLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-				-amount
+				-amount,
+				"EUR"
 		);
 		accountPayment.setCurrentBalance(accountPayment.getCurrentBalance() - amount);
 		operationsDtos.add(checkingOp);
 
-		OperationDto savingOp = new OperationDto(
+		TransactionDto savingOp = new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountSaving.getUuid(),
-				OperationDto.OperationDtoType.TRANSFER,
+				TransactionDto.TransactionDtoType.TRANSFER,
 				dateOperation,
 				dateOperation,
 				"Transfer from " + accountPayment.getLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-				amount
+				amount,
+				"EUR"
 		);
 		accountSaving.setCurrentBalance(accountSaving.getCurrentBalance() + amount);
 		operationsDtos.add(savingOp);
@@ -307,18 +337,20 @@ public class StubbedCollector implements CollectorPlugin {
 		return operationsDtos;
 	}
 
-	public List<OperationDto> generateOperationInterne() {
-		List<OperationDto> operationsDtos = new ArrayList<>();
+	public List<TransactionDto> generateOperationInterne() {
+		List<TransactionDto> operationsDtos = new ArrayList<>();
 		Date dateOperation = new Date(beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime())));
 		double amount = randomPrice();
-		OperationDto savingOp = new OperationDto(
+		TransactionDto savingOp = new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountSaving.getUuid(),
-				OperationDto.OperationDtoType.INTERNAL,
+				TransactionDto.TransactionDtoType.INTERNAL,
 				dateOperation,
 				dateOperation,
 				"Interest 2%",
 				OperationLabelGenerator.generateOperationDetails(15),
-				amount
+				amount,
+				"EUR"
 		);
 		accountSaving.setCurrentBalance(accountSaving.getCurrentBalance() + amount);
 		operationsDtos.add(savingOp);
@@ -326,18 +358,20 @@ public class StubbedCollector implements CollectorPlugin {
 		return operationsDtos;
 	}
 
-	OperationDto generateOperation() {
+	TransactionDto generateOperation() {
 		long dateValue = beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime()));
 		long dateOperation = dateValue + (long) (RANDOM.nextDouble() * (endDate.getTime() - dateValue));
-		OperationDto.OperationDtoType type = getOperationDtoType(dateOperation);
-		return new OperationDto(
+		TransactionDto.TransactionDtoType type = getTransactionDtoType(dateOperation);
+		return new TransactionDto(
+				UUID.randomUUID().toString(),
 				accountPayment.getUuid(),
                 type,
                 new Date(dateOperation),
                 new Date(dateValue),
 				OperationLabelGenerator.generateOperationLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-                RANDOM.nextDouble() * 1000 - 500
+                RANDOM.nextDouble() * 1000 - 500,
+				"EUR"
         );
 	}
 
@@ -345,7 +379,8 @@ public class StubbedCollector implements CollectorPlugin {
 		ItemDto dto = new ItemDto(
 				ItemLabelGenerator.generateProductName(),
 				randomPrice(),
-				randomQuantity()
+				randomQuantity(),
+				ItemDto.QuantityUnit.UNIT
 		);
 		if (randomYes(40)) {
 			dto.setReference(ItemDto.ProductReferenceType.ASIN, "ABCDEFGHIJ");
@@ -374,27 +409,27 @@ public class StubbedCollector implements CollectorPlugin {
 		return dto;
 	}
 
-	private static OperationDto.OperationDtoType getOperationDtoType(long dateOperation) {
-		OperationDto.OperationDtoType type = OperationDto.OperationDtoType.PAYMENT;
+	private static TransactionDto.TransactionDtoType getTransactionDtoType(long dateOperation) {
+		TransactionDto.TransactionDtoType type = TransactionDto.TransactionDtoType.PAYMENT;
 		if (dateOperation % 11 == 0) {
-			type = OperationDto.OperationDtoType.PURCHASE;
+			type = TransactionDto.TransactionDtoType.PURCHASE;
 		}
 		else if (dateOperation % 7 == 0) {
-			type = OperationDto.OperationDtoType.INTERNAL;
+			type = TransactionDto.TransactionDtoType.INTERNAL;
 		}
 		else if (dateOperation % 5 == 0) {
-			type = OperationDto.OperationDtoType.TRANSFER;
+			type = TransactionDto.TransactionDtoType.TRANSFER;
 		}
 		return type;
 	}
 
-	void addError(OperationDto dto) {
+	void addError(TransactionDto dto) {
 		// Generate a int between 1 and 9 included (JAVA 8)
 		int errorType = RANDOM.nextInt( 9) + 1;
 		switch (errorType) {
 			case 1:
 				LOG.log(Level.FINE, "Adding error: date operation = null");
-				dto.setDateOperation(null);
+				dto.setDateTransaction(null);
 				break;
 			case 2:
 				LOG.log(Level.FINE, "Adding error: date value = null");
@@ -491,11 +526,6 @@ public class StubbedCollector implements CollectorPlugin {
 
 	public void setParameterErrorField(String parameterErrorField) {
 		this.parameterErrorField = parameterErrorField;
-	}
-
-	@Override
-	public void setAccounts(List<AccountDto> list) {
-		this.accounts.addAll(list);
 	}
 
 	public void setOtpProvider(OTPProvider otpProvider) {
