@@ -17,6 +17,8 @@ public class StubbedCollector implements CollectorPlugin {
 
 	private static final Logger LOG = Logger.getLogger(StubbedCollector.class.getName());
 
+	private static final String COUNTERPARTY_UUID = "12345678-1234-1234-1245-123456789012";
+
 	public enum Type {
 		OPERATIONS, ERR_CollectError, ERR_AccessDeny, ERR_TemporaryUnavailable, ERR_ConnectionFailure, ERR_ParameterError, ERR_RuntimeCollect, ERR_RuntimeOperation, ERR_RuntimeAccount, ERR_RuntimeValidate
 	}
@@ -97,7 +99,7 @@ public class StubbedCollector implements CollectorPlugin {
 		switch (type) {
 			case OPERATIONS:
 				if (this.accountPayment == null) {
-					this.accountPayment = new AccountDto(AccountDto.AccountDtoType.PAYMENT, "My checking account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountPayment = new AccountDto(AccountDto.AccountDtoType.PAYMENT, "My checking account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CARD, "1234"));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CHECK));
@@ -105,12 +107,12 @@ public class StubbedCollector implements CollectorPlugin {
 					this.accounts.add(this.accountPayment);
 				}
 				if (this.accountSaving == null) {
-					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountSaving.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accounts.add(this.accountSaving);
 				}
 				if (this.accountShopping == null) {
-					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", "Stubbed collector", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
+					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
 					LoyaltyCardDto card = new LoyaltyCardDto();
 					card.setBarcodeType(LoyaltyCardDto.BarcodeType.CODE_128);
 					card.setReference("123456789012");
