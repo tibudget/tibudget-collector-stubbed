@@ -38,7 +38,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
 
-        <tibudget.api.version>0.35</tibudget.api.version>
+        <tibudget.api.version>0.39</tibudget.api.version>
     </properties>
 
     <dependencies>

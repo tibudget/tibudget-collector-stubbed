@@ -113,16 +113,6 @@ public class StubbedCollector implements CollectorPlugin {
 				}
 				if (this.accountShopping == null) {
 					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
-					LoyaltyCardDto card = new LoyaltyCardDto();
-					card.setBarcodeType(LoyaltyCardDto.BarcodeType.CODE_128);
-					card.setReference("123456789012");
-					card.setIssuer("Myshop.com");
-                    try {
-                        card.setCover(new FileDto(FileDto.FileDtoType.IMAGE, "Card cover", "image/png", FileGenerator.copyResourceToTempFile("loyalty-card.png")));
-                    } catch (IOException e) {
-                        LOG.log(Level.SEVERE, "Cannot load loyalty card cover: " + e.getMessage(), e);
-                    }
-                    this.accountShopping.addLoyaltyCard(card);
 					this.accounts.add(this.accountShopping);
 				}
 				if (beginDate == null) {

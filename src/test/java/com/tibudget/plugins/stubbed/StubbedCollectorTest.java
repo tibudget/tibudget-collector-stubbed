@@ -3,7 +3,6 @@ package com.tibudget.plugins.stubbed;
 import com.tibudget.api.exceptions.*;
 import com.tibudget.dto.AccountDto;
 import com.tibudget.dto.ItemDto;
-import com.tibudget.dto.LoyaltyCardDto;
 import com.tibudget.dto.TransactionDto;
 import com.tibudget.plugins.stubbed.StubbedCollector.Type;
 import org.junit.Assert;
@@ -106,11 +105,6 @@ public class StubbedCollectorTest {
 				.filter(account -> account.getType() == AccountDto.AccountDtoType.SHOPPING)
 				.findFirst();
 		Assert.assertTrue(firstShoppingAccount.isPresent());
-		AccountDto accountDto = firstShoppingAccount.get();
-		Assert.assertNotNull(accountDto.getLoyaltyCards());
-		Assert.assertEquals(1, accountDto.getLoyaltyCards().size());
-		LoyaltyCardDto loyaltyCardDto = accountDto.getLoyaltyCards().get(0);
-		Assert.assertNotNull(loyaltyCardDto.getCover());
 	}
 
 	@Test(expected=AccessDeny.class)
