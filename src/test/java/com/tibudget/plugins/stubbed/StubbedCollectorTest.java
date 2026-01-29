@@ -5,258 +5,313 @@ import com.tibudget.dto.AccountDto;
 import com.tibudget.dto.ItemDto;
 import com.tibudget.dto.TransactionDto;
 import com.tibudget.plugins.stubbed.StubbedCollector.Type;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class StubbedCollectorTest {
 
 	private static final Logger LOG = Logger.getLogger(StubbedCollectorTest.class.getName());
-
 	public static final double MAX_VALUE = 100000000000.0;
 
 	@Test
-	public void testItem() {
+	void testItem() {
 		ItemDto itemDto = StubbedCollector.generateItem();
-		Assert.assertNotNull(itemDto);
+		assertNotNull(itemDto);
 	}
 
 	@Test
-	public void testOperationPurchase() {
+	void testOperationPurchase() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.validate();
-		List<TransactionDto> TransactionDtos = collector.generateOperationPurchase();
-		Assert.assertNotNull(TransactionDtos);
-        Assert.assertEquals(2, TransactionDtos.size());
-		for (TransactionDto TransactionDto : TransactionDtos) {
-			Assert.assertNotNull(TransactionDto);
-		}
+
+		List<TransactionDto> transactionDtos = collector.generateOperationPurchase();
+		assertNotNull(transactionDtos);
+		assertEquals(2, transactionDtos.size());
+
+		transactionDtos.forEach(Assertions::assertNotNull);
 	}
 
 	@Test
-	public void testOperationTransfer() {
+	void testOperationTransfer() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.validate();
-		List<TransactionDto> TransactionDtos = collector.generateOperationTransfer();
-		Assert.assertNotNull(TransactionDtos);
-		Assert.assertEquals(2, TransactionDtos.size());
-		for (TransactionDto TransactionDto : TransactionDtos) {
-			Assert.assertNotNull(TransactionDto);
-		}
+
+		List<TransactionDto> transactionDtos = collector.generateOperationTransfer();
+		assertNotNull(transactionDtos);
+		assertEquals(2, transactionDtos.size());
+
+		transactionDtos.forEach(Assertions::assertNotNull);
 	}
 
 	@Test
-	public void testOperationInterne() {
+	void testOperationInterne() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.validate();
-		List<TransactionDto> TransactionDtos = collector.generateOperationInterne();
-		Assert.assertNotNull(TransactionDtos);
-		Assert.assertEquals(1, TransactionDtos.size());
-		for (TransactionDto TransactionDto : TransactionDtos) {
-			Assert.assertNotNull(TransactionDto);
-		}
+
+		List<TransactionDto> transactionDtos = collector.generateOperationInterne();
+		assertNotNull(transactionDtos);
+		assertEquals(1, transactionDtos.size());
+
+		transactionDtos.forEach(Assertions::assertNotNull);
 	}
 
 	@Test
-	public void testRandom() throws MessagesException {
+	void testRandom() throws MessagesException {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccountPayment(new AccountDto(AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(
+				AccountDto.AccountDtoType.PAYMENT,
+				"my account",
+				"StubbedCollectorTest",
+				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				0.0
+		));
+
 		Date beginDate = new Date();
-		// one week
-		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
+		Date endDate = new Date(beginDate.getTime() + 1000L * 60 * 60 * 24 * 7);
+
 		collector.setBeginDate(beginDate);
 		collector.setEndDate(endDate);
 		collector.setCorrectOpCount(50);
 		collector.setErrorOpCount(0);
-		Assert.assertEquals("progress", 0, collector.getProgress());
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
+
+		assertEquals(0, collector.getProgress());
+		assertEquals(0, collector.validate().size());
+
 		collector.collect();
-		Assert.assertNotNull(collector.getAccounts());
+
+		assertNotNull(collector.getAccounts());
+
 		int opCount = 0;
 		for (TransactionDto opDto : collector.getTransactions()) {
-			LOG.log(Level.FINE, "dateOp=" + opDto.getDateTransaction() + " dateVal=" + opDto.getDateValue() + " val=" + opDto.getAmount());
-			Assert.assertNotNull("value date", opDto.getDateValue());
-			Assert.assertTrue(opDto.getDateValue().getTime() >= beginDate.getTime());
-			Assert.assertTrue(opDto.getDateValue().getTime() <= endDate.getTime());
-			Assert.assertNotNull("operation date", opDto.getDateTransaction());
-			Assert.assertTrue(opDto.getDateTransaction().getTime() >= beginDate.getTime());
-			Assert.assertTrue(opDto.getDateTransaction().getTime() <= endDate.getTime());
-			Assert.assertNotNull("label", opDto.getLabel());
-            Assert.assertFalse("label size", opDto.getLabel().trim().isEmpty());
-			Assert.assertNotNull(opDto.getLabel());
-			Assert.assertTrue("value limit", opDto.getAmount() <= MAX_VALUE && opDto.getAmount() >= -MAX_VALUE);
+			LOG.log(Level.FINE,
+					"dateOp=" + opDto.getDateTransaction()
+							+ " dateVal=" + opDto.getDateValue()
+							+ " val=" + opDto.getAmount());
+
+			assertNotNull(opDto.getDateValue());
+			assertTrue(opDto.getDateValue().getTime() >= beginDate.getTime());
+			assertTrue(opDto.getDateValue().getTime() <= endDate.getTime());
+
+			assertNotNull(opDto.getDateTransaction());
+			assertTrue(opDto.getDateTransaction().getTime() >= beginDate.getTime());
+			assertTrue(opDto.getDateTransaction().getTime() <= endDate.getTime());
+
+			assertNotNull(opDto.getLabel());
+			assertFalse(opDto.getLabel().trim().isEmpty());
+
+			assertTrue(opDto.getAmount() <= MAX_VALUE && opDto.getAmount() >= -MAX_VALUE);
+
 			opCount++;
 		}
-		Assert.assertEquals("operation count", 50 * 4 + 1, opCount);
-		Assert.assertEquals("progress", 100, collector.getProgress());
+
+		assertEquals(50 * 4 + 1, opCount);
+		assertEquals(100, collector.getProgress());
 	}
 
 	@Test
-	public void testDefaultAccount() throws MessagesException {
+	void testDefaultAccount() throws MessagesException {
 		StubbedCollector collector = new StubbedCollector();
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
+		assertEquals(0, collector.validate().size());
+
 		collector.collect();
-		Assert.assertNotNull(collector.getAccounts());
-		Assert.assertEquals(3, collector.getAccounts().size());
-		Optional<AccountDto> firstShoppingAccount = collector.getAccounts().stream()
-				.filter(account -> account.getType() == AccountDto.AccountDtoType.SHOPPING)
+
+		assertNotNull(collector.getAccounts());
+		assertEquals(3, collector.getAccounts().size());
+
+		Optional<AccountDto> shoppingAccount = collector.getAccounts().stream()
+				.filter(a -> a.getType() == AccountDto.AccountDtoType.SHOPPING)
 				.findFirst();
-		Assert.assertTrue(firstShoppingAccount.isPresent());
+
+		assertTrue(shoppingAccount.isPresent());
 	}
 
-	@Test(expected=AccessDeny.class)
-	public void testAccessDeny() throws MessagesException {
+	@Test
+	void testAccessDeny() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_AccessDeny);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(AccessDeny.class, collector::collect);
 	}
 
-	@Test(expected=CollectError.class)
-	public void testCollectError() throws MessagesException {
+	@Test
+	void testCollectError() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_CollectError);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(CollectError.class, collector::collect);
 	}
 
-	@Test(expected=TemporaryUnavailable.class)
-	public void testTemporaryUnavailable() throws MessagesException {
+	@Test
+	void testTemporaryUnavailable() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_TemporaryUnavailable);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(TemporaryUnavailable.class, collector::collect);
 	}
 
-	@Test(expected=ConnectionFailure.class)
-	public void testConnectionFailure() throws MessagesException {
+	@Test
+	void testConnectionFailure() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_ConnectionFailure);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(ConnectionFailure.class, collector::collect);
 	}
 
-	@Test(expected=ParameterError.class)
-	public void testParameterError() throws MessagesException {
+	@Test
+	void testParameterError() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_ParameterError);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(ParameterError.class, collector::collect);
 	}
 
-	@Test(expected=ParameterError.class)
-	public void testParameterErrorWithField() throws MessagesException {
+	@Test
+	void testParameterErrorWithField() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_ParameterError);
 		collector.setParameterErrorField("toto");
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		collector.collect();
+		assertEquals(0, collector.validate().size());
+
+		assertThrows(ParameterError.class, collector::collect);
 	}
 
 	@Test
-	public void testParameterErrorEndDateNull() {
+	void testParameterErrorEndDateNull() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccountPayment(new AccountDto(com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
-		Date beginDate = new Date();
-		collector.setBeginDate(beginDate);
+		collector.setAccountPayment(new AccountDto(
+				AccountDto.AccountDtoType.PAYMENT,
+				"my account",
+				"StubbedCollectorTest",
+				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				0.0
+		));
+
+		collector.setBeginDate(new Date());
 		collector.setEndDate(null);
 		collector.setType(Type.OPERATIONS);
-        Assert.assertFalse("validation messages size", collector.validate().isEmpty());
+
+		assertFalse(collector.validate().isEmpty());
 	}
 
 	@Test
-	public void testParameterErrorBadDates() {
+	void testParameterErrorBadDates() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccountPayment(new AccountDto(com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(
+				AccountDto.AccountDtoType.PAYMENT,
+				"my account",
+				"StubbedCollectorTest",
+				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				0.0
+		));
+
 		Date beginDate = new Date();
-		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
+		Date endDate = new Date(beginDate.getTime() + 1000L * 60 * 60 * 24 * 7);
+
 		collector.setBeginDate(endDate);
 		collector.setEndDate(beginDate);
 		collector.setType(Type.OPERATIONS);
-        Assert.assertFalse("validation messages size", collector.validate().isEmpty());
+
+		assertFalse(collector.validate().isEmpty());
 	}
 
 	@Test
-	public void testParameterErrorCorrectCount() {
+	void testParameterErrorCorrectCount() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccountPayment(new AccountDto(com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(
+				AccountDto.AccountDtoType.PAYMENT,
+				"my account",
+				"StubbedCollectorTest",
+				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				0.0
+		));
+
 		Date beginDate = new Date();
-		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
+		Date endDate = new Date(beginDate.getTime() + 1000L * 60 * 60 * 24 * 7);
+
 		collector.setBeginDate(beginDate);
 		collector.setEndDate(endDate);
 		collector.setCorrectOpCount(-1);
 		collector.setErrorOpCount(0);
 		collector.setType(Type.OPERATIONS);
-        Assert.assertFalse("validation messages size", collector.validate().isEmpty());
+
+		assertFalse(collector.validate().isEmpty());
 	}
 
 	@Test
-	public void testParameterErrorErrorCount() {
+	void testParameterErrorErrorCount() {
 		StubbedCollector collector = new StubbedCollector();
-		collector.setAccountPayment(new AccountDto(com.tibudget.dto.AccountDto.AccountDtoType.PAYMENT, "my account", "StubbedCollectorTest", Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0));
+		collector.setAccountPayment(new AccountDto(
+				AccountDto.AccountDtoType.PAYMENT,
+				"my account",
+				"StubbedCollectorTest",
+				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				0.0
+		));
+
 		Date beginDate = new Date();
-		Date endDate = new Date(beginDate.getTime() + (1000 * 60 * 60 * 24 * 7));
+		Date endDate = new Date(beginDate.getTime() + 1000L * 60 * 60 * 24 * 7);
+
 		collector.setBeginDate(beginDate);
 		collector.setEndDate(endDate);
 		collector.setCorrectOpCount(0);
 		collector.setErrorOpCount(-1);
 		collector.setType(Type.OPERATIONS);
-        Assert.assertFalse("validation messages size", collector.validate().isEmpty());
+
+		assertFalse(collector.validate().isEmpty());
 	}
 
 	@Test
-	public void testRuntimeAccount() {
+	void testRuntimeAccount() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_RuntimeAccount);
-		Assert.assertEquals("validation messages size", 0, collector.validate().size());
-		Assert.assertNotNull("getTransactions", collector.getTransactions());
-		try {
-			collector.getAccounts();
-		}
-		catch (RuntimeException e) {
-			Assert.assertTrue("Simulated RuntimeException", e.getMessage().contains("Simulated"));
-		}
+
+		assertEquals(0, collector.validate().size());
+		assertNotNull(collector.getTransactions());
+
+		RuntimeException ex = assertThrows(RuntimeException.class, collector::getAccounts);
+		assertTrue(ex.getMessage().contains("Simulated"));
 	}
 
 	@Test
-	public void testRuntimeOperation() {
+	void testRuntimeOperation() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_RuntimeOperation);
-		Assert.assertNotNull("getAccounts", collector.getAccounts());
-		try {
-			collector.getTransactions();
-		}
-		catch (RuntimeException e) {
-			Assert.assertTrue("Simulated RuntimeException", e.getMessage().contains("Simulated"));
-		}
+
+		assertNotNull(collector.getAccounts());
+
+		RuntimeException ex = assertThrows(RuntimeException.class, collector::getTransactions);
+		assertTrue(ex.getMessage().contains("Simulated"));
 	}
 
 	@Test
-	public void testRuntimeCollect() throws MessagesException {
+	void testRuntimeCollect() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_RuntimeCollect);
-		Assert.assertNotNull("getAccounts", collector.getAccounts());
-		Assert.assertNotNull("getTransactions", collector.getTransactions());
-		try {
-			collector.collect();
-		}
-		catch (RuntimeException e) {
-			Assert.assertTrue("Simulated RuntimeException", e.getMessage().contains("Simulated"));
-		}
+
+		assertNotNull(collector.getAccounts());
+		assertNotNull(collector.getTransactions());
+
+		RuntimeException ex = assertThrows(RuntimeException.class, collector::collect);
+		assertTrue(ex.getMessage().contains("Simulated"));
 	}
 
 	@Test
-	public void testRuntimeValidate() {
+	void testRuntimeValidate() {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setType(Type.ERR_RuntimeValidate);
-		try {
-			collector.validate();
-		}
-		catch (RuntimeException e) {
-			Assert.assertTrue("Simulated RuntimeException", e.getMessage().contains("Simulated"));
-		}
+
+		RuntimeException ex = assertThrows(RuntimeException.class, collector::validate);
+		assertTrue(ex.getMessage().contains("Simulated"));
 	}
 }

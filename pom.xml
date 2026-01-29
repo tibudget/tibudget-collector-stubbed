@@ -37,19 +37,15 @@
         <!-- To make the build platform independant -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
+        <mockito.version>5.21.0</mockito.version>
+        <junit.jupiter.version>5.14.2</junit.jupiter.version>
 
-        <tibudget.api.version>0.39</tibudget.api.version>
+        <tibudget.api.version>0.41</tibudget.api.version>
+        <tibudget.utils.version>0.14</tibudget.utils.version>
+        <tibudget.utils-test.version>0.3</tibudget.utils-test.version>
     </properties>
 
     <dependencies>
-
-        <!-- Test scope -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.5</version>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Provided libraries: API + logging -->
         <dependency>
@@ -57,6 +53,21 @@
             <artifactId>tibudget-api</artifactId>
             <version>${tibudget.api.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <!-- Will bring jsoup -->
+            <groupId>com.tibudget</groupId>
+            <artifactId>tibudget-api-utils</artifactId>
+            <version>${tibudget.utils.version}</version>
+        </dependency>
+
+        <!-- Test scope -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -75,7 +86,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <release>11</release>
+                    <release>${maven.compiler.release}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>

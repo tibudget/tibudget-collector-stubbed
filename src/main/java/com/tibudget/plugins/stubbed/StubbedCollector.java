@@ -1,19 +1,20 @@
 package com.tibudget.plugins.stubbed;
 
-import com.tibudget.api.*;
+import com.tibudget.api.Input;
+import com.tibudget.api.OTPProvider;
 import com.tibudget.api.exceptions.*;
 import com.tibudget.dto.*;
 import com.tibudget.dto.MessageDto.MessageType;
+import com.tibudget.utils.AbstractCollectorPlugin;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class StubbedCollector implements CollectorPlugin {
+public class StubbedCollector extends AbstractCollectorPlugin {
 
 	private static final Logger LOG = Logger.getLogger(StubbedCollector.class.getName());
 
@@ -56,8 +57,6 @@ public class StubbedCollector implements CollectorPlugin {
 	@Input(required = false)
 	private boolean askForCode = false;
 
-	private OTPProvider otpProvider;
-
 	private Double progress = 0.0;
 
 	private final List<TransactionDto> operations = new ArrayList<>();
@@ -70,27 +69,6 @@ public class StubbedCollector implements CollectorPlugin {
 	private static final Random RANDOM = new Random();
 
 	@Override
-	public void init(InternetProvider internetProvider,
-					 CounterpartyProvider counterpartyProvider,
-					 OTPProvider otpProvider,
-					 PDFToolsProvider pdfToolsProvider,
-					 Map<String, String> settings,
-					 Map<String, String> previousCookies,
-					 List<AccountDto> previousAccounts) {
-		this.otpProvider = otpProvider;
-		this.accounts.addAll(previousAccounts);
-	}
-
-	@Override
-	public String initConnection(URI uri) {
-		return "";
-	}
-
-	@Override
-	public String getOpenIdJSONConfiguration() {
-		return CollectorPlugin.super.getOpenIdJSONConfiguration();
-	}
-
 	public List<MessageDto> validate() {
 		List<MessageDto> msg = new ArrayList<>();
 		if (type == Type.ERR_RuntimeValidate) {
@@ -216,14 +194,13 @@ public class StubbedCollector implements CollectorPlugin {
 		return operations;
 	}
 
-	public int getProgress() {
-		return progress.intValue();
+	@Override
+	public String getDomain() {
+		return "";
 	}
 
-	@Override
-	public Map<String, String> getCookies() {
-		// No cookies needed by this collector
-		return Map.of();
+	public int getProgress() {
+		return progress.intValue();
 	}
 
 	public List<TransactionDto> generateOperationPurchase() {
@@ -518,14 +495,6 @@ public class StubbedCollector implements CollectorPlugin {
 
 	public void setParameterErrorField(String parameterErrorField) {
 		this.parameterErrorField = parameterErrorField;
-	}
-
-	public void setOtpProvider(OTPProvider otpProvider) {
-		this.otpProvider = otpProvider;
-	}
-
-	public void setProgress(Double progress) {
-		this.progress = progress;
 	}
 
 	public void setAccountPayment(AccountDto accountPayment) {
