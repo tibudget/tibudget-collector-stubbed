@@ -1,5 +1,6 @@
 package com.tibudget.plugins.stubbed;
 
+import com.tibudget.api.BarcodeTypeEnum;
 import com.tibudget.api.Input;
 import com.tibudget.api.OTPProvider;
 import com.tibudget.api.exceptions.*;
@@ -54,6 +55,9 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 	@Input(fieldset="type_OPERATIONS", order=1, required = false)
 	private AccountDto accountShopping;
 
+	@Input(fieldset="type_OPERATIONS", order=1, required = false)
+	private AccountDto accountLoyalty;
+
 	@Input(required = false)
 	private boolean askForCode = false;
 
@@ -92,6 +96,13 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				if (this.accountShopping == null) {
 					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
 					this.accounts.add(this.accountShopping);
+				}
+				if (this.accountLoyalty == null) {
+					this.accountLoyalty = new AccountDto(AccountDto.AccountDtoType.LOYALTY_CARD, "My loyalty", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BAR_CODE_TYPE, BarcodeTypeEnum.EAN_13.name());
+					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_REFERENCE, "1234567891234");
+					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BG_COLOR, "00ACDF");
+					this.accounts.add(this.accountLoyalty);
 				}
 				if (beginDate == null) {
 					// Default is past 7 days
@@ -135,6 +146,15 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				throw new AccessDeny("Access denied, no OTP code provided");
 			}
 		}
+
+		// Test settings and setConfigurationName
+		String collectCount = settings.get("collectCount");
+		if (collectCount == null || collectCount.isEmpty()) {
+			collectCount = "1";
+		}
+		settings.put("collectCount", Integer.toString(Integer.parseInt(collectCount) + 1));
+		setConfigurationName("Collect #" + collectCount);
+
 		switch (type) {
 			case ERR_CollectError:
 				throw new CollectError("error.CollectError", new Date());

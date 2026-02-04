@@ -122,7 +122,7 @@ public class StubbedCollectorTest {
 		collector.collect();
 
 		assertNotNull(collector.getAccounts());
-		assertEquals(3, collector.getAccounts().size());
+		assertEquals(4, collector.getAccounts().size());
 
 		Optional<AccountDto> shoppingAccount = collector.getAccounts().stream()
 				.filter(a -> a.getType() == AccountDto.AccountDtoType.SHOPPING)
