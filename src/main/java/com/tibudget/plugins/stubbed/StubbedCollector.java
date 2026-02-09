@@ -11,7 +11,6 @@ import com.tibudget.utils.AbstractCollectorPlugin;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
@@ -68,10 +67,6 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 
 	private Double progress = 0.0;
 
-	private final List<TransactionDto> operations = new ArrayList<>();
-
-	private final List<AccountDto> accounts = new ArrayList<>();
-
 	/**
 	 * Random instance for generating random values
 	 */
@@ -93,27 +88,31 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 			case OPERATIONS:
 				if (this.accountPayment == null) {
 					this.accountPayment = new AccountDto(AccountDto.AccountDtoType.PAYMENT, "My checking account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountPayment.setId("STUBBED_PAYMENT");
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CARD, "1234"));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CHECK));
 					this.accountPayment.setMetadata(AccountDto.METADATA_IBAN, "FR1234567891234567891234567");
-					this.accounts.add(this.accountPayment);
+					this.accounts.put(this.accountPayment.getId(), this.accountPayment);
 				}
 				if (this.accountSaving == null) {
 					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountSaving.setId("STUBBED_SAVING");
 					this.accountSaving.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
-					this.accounts.add(this.accountSaving);
+					this.accounts.put(this.accountSaving.getId(), this.accountSaving);
 				}
 				if (this.accountShopping == null) {
 					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
-					this.accounts.add(this.accountShopping);
+					this.accountShopping.setId("STUBBED_SHOPPING");
+					this.accounts.put(this.accountShopping.getId(), this.accountShopping);
 				}
 				if (this.accountLoyalty == null) {
 					this.accountLoyalty = new AccountDto(AccountDto.AccountDtoType.LOYALTY_CARD, "My loyalty", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
+					this.accountLoyalty.setId("STUBBED_LOYALTY_CARD");
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BAR_CODE_TYPE, BarcodeTypeEnum.EAN_13.name());
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_REFERENCE, "978020137862");
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BG_COLOR, "#00ACDF");
-					this.accounts.add(this.accountLoyalty);
+					this.accounts.put(this.accountLoyalty.getId(), this.accountLoyalty);
 				}
 				if (beginDate == null) {
 					// Default is past 7 days
@@ -181,17 +180,17 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				throw new RuntimeException("Simulated runtime exception in collect()");
 			case OPERATIONS:
 			default:
-				operations.addAll(generateOperationInterne());
+				transactions.addAll(generateOperationInterne());
 				for (int i = 0; i < this.correctOpCount; i++) {
-					operations.addAll(generateOperationPurchase());
-					operations.addAll(generateOperationTransfer());
+					transactions.addAll(generateOperationPurchase());
+					transactions.addAll(generateOperationTransfer());
 				}
-				operations.addAll(generateRecurringTransactions());
+				transactions.addAll(generateRecurringTransactions());
 				for (int i = 0; i < this.errorOpCount; i++) {
 					TransactionDto opDto = generateOperation();
 					addError(opDto);
 					this.accountPayment.setCurrentBalance(this.accountPayment.getCurrentBalance() + opDto.getAmount());
-					operations.add(opDto);
+					transactions.add(opDto);
 				}
 				break;
 		}
@@ -206,16 +205,11 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 		progress = 100.0;
 	}
 
-	@Override
-	public Map<String, String> getSettings() {
-		return Map.of();
-	}
-
 	public List<AccountDto> getAccounts() {
 		if (type == Type.ERR_RuntimeAccount) {
 			throw new RuntimeException("Simulated runtime exception in getAccounts()");
 		}
-		return accounts;
+		return super.getAccounts();
 	}
 
 	@Override
@@ -223,7 +217,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 		if (type == Type.ERR_RuntimeOperation) {
 			throw new RuntimeException("Simulated runtime exception in getOperations()");
 		}
-		return operations;
+		return super.getTransactions();
 	}
 
 	@Override

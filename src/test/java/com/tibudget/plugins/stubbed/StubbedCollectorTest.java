@@ -326,6 +326,14 @@ public class StubbedCollectorTest {
 
 		assertNotNull(collector.getAccounts());
 		assertEquals(4, collector.getAccounts().size());
+		collector.getAccounts().forEach(a -> {
+			assertNotNull(a.getType());
+			assertNotNull(a.getId());
+			assertNotNull(a.getUuid());
+			assertNotNull(a.getLabel());
+			assertNotNull(a.getCurrencyCode());
+			assertNotNull(a.getMetadatas());
+		});
 
 		Optional<AccountDto> shoppingAccount = collector.getAccounts().stream()
 				.filter(a -> a.getType() == AccountDto.AccountDtoType.SHOPPING)
