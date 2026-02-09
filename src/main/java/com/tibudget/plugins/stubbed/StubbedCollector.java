@@ -11,7 +11,12 @@ import com.tibudget.utils.AbstractCollectorPlugin;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,6 +77,12 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 	 */
 	private static final Random RANDOM = new Random();
 
+	public StubbedCollector() {
+		super();
+		endDate = new Date();
+		beginDate = new Date(endDate.getTime() - (1000L * 60 * 60 * 24 * 365));
+	}
+
 	@Override
 	public List<MessageDto> validate() {
 		List<MessageDto> msg = new ArrayList<>();
@@ -100,8 +111,8 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				if (this.accountLoyalty == null) {
 					this.accountLoyalty = new AccountDto(AccountDto.AccountDtoType.LOYALTY_CARD, "My loyalty", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BAR_CODE_TYPE, BarcodeTypeEnum.EAN_13.name());
-					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_REFERENCE, "1234567891234");
-					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BG_COLOR, "00ACDF");
+					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_REFERENCE, "978020137862");
+					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BG_COLOR, "#00ACDF");
 					this.accounts.add(this.accountLoyalty);
 				}
 				if (beginDate == null) {
@@ -175,6 +186,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 					operations.addAll(generateOperationPurchase());
 					operations.addAll(generateOperationTransfer());
 				}
+				operations.addAll(generateRecurringTransactions());
 				for (int i = 0; i < this.errorOpCount; i++) {
 					TransactionDto opDto = generateOperation();
 					addError(opDto);
@@ -221,6 +233,47 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 
 	public int getProgress() {
 		return progress.intValue();
+	}
+
+	public List<TransactionDto> generateRecurringTransactions() {
+		List<TransactionDto> transactionDtos = new ArrayList<>();
+		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
+				"NETFLIX",
+				"Streaming subscription",
+				5.99,
+				0.0,
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2020, 3, 6),
+				null,
+				null,
+				null
+		)));
+		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
+				"SCHOOL_FEES",
+				"School fees",
+				231.24,
+				0.05,
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2026, 1, 5),
+				LocalDate.of(2026, 10, 31),
+				Month.JANUARY,
+				Month.OCTOBER
+		)));
+		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
+				"WEEKLY_SBU",
+				"Weekly monday gain",
+				-10.0,
+				null,
+				RecurringPaymentDto.RecurrenceUnit.WEEK,
+				1,
+				LocalDate.of(2025, 1, 6), // Monday
+				null,
+				null,
+				null
+		)));
+		return transactionDtos;
 	}
 
 	public List<TransactionDto> generateOperationPurchase() {
@@ -346,6 +399,123 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 
 		return operationsDtos;
 	}
+
+	public List<TransactionDto> generateRecurringTransactions(RecurringPaymentConfig config) {
+		LocalDate globalBegin = beginDate.toInstant().atZone(ZoneId.of("Europe/Paris")).toLocalDate();
+		LocalDate globalEnd = endDate.toInstant().atZone(ZoneId.of("Europe/Paris")).toLocalDate();
+		List<TransactionDto> result = new ArrayList<>();
+
+		RecurringPaymentDto recurringPayment = recurringPayments.computeIfAbsent(
+				config.seed,
+				k -> new RecurringPaymentDto(
+						config.seed,
+						UUID.randomUUID().toString(),
+						accountPayment.getUuid(),
+						config.label,
+						config.amount,
+						config.ratio,
+						toDate(config.start),
+						config.end == null ? null : toDate(config.end),
+						config.interval,
+						config.unit,
+						RecurringPaymentDto.State.ACTIVE,
+						null
+				)
+		);
+
+		LocalDate date =config.start;
+		// Skip occurrences before globalBegin
+		while (date.isBefore(globalBegin)) {
+			date = increment(date, config);
+		}
+		LocalDate end = config.end == null ? globalEnd : min(globalEnd, config.end);
+
+		while (!date.isAfter(end)) {
+
+			if (isMonthAllowed(date, config)) {
+				String id = UUID.nameUUIDFromBytes(
+						(config.seed + ":" + date).getBytes()
+				).toString();
+
+				double effectiveRatio;
+				if (config.ratio == null) {
+					effectiveRatio = 0.30;
+				} else if (config.ratio == 0.0) {
+					effectiveRatio = 0.0;
+				} else {
+					effectiveRatio = config.ratio;
+				}
+				double sign = Math.signum(config.amount);
+				double base = Math.abs(config.amount);
+				double amount;
+				if (effectiveRatio == 0.0) {
+					amount = base;
+				} else {
+					amount = ThreadLocalRandom.current().nextDouble(
+							base * (1.0 - effectiveRatio),
+							base * (1.0 + effectiveRatio)
+					);
+				}
+				amount = Math.round(amount * 100.0) / 100.0;
+				amount *= sign;
+
+				TransactionDto dto = new TransactionDto(
+						id,
+						accountPayment.getUuid(),
+						TransactionDto.TransactionDtoType.PAYMENT,
+						toDate(date),
+						toDate(date),
+						config.label,
+						config.label + " " + date,
+						amount,
+						"EUR"
+				);
+
+				dto.setRecurrentPaymentUuid(recurringPayment.getUuid());
+				result.add(dto);
+			}
+
+			date = increment(date, config);
+		}
+
+		return result;
+	}
+	private static LocalDate increment(LocalDate date, RecurringPaymentConfig config) {
+		if (config.unit == RecurringPaymentDto.RecurrenceUnit.WEEK) {
+			return date.plusWeeks(config.interval);
+		}
+		if (config.unit == RecurringPaymentDto.RecurrenceUnit.MONTH) {
+			return date.plusMonths(config.interval);
+		}
+		if (config.unit == RecurringPaymentDto.RecurrenceUnit.YEAR) {
+			return date.plusYears(config.interval);
+		}
+		throw new IllegalStateException("Unsupported recurrence unit");
+	}
+
+	private static boolean isMonthAllowed(LocalDate date, RecurringPaymentConfig config) {
+		if (config.startMonth == null || config.endMonth == null) {
+			return true;
+		}
+		int m = date.getMonthValue();
+		return m >= config.startMonth.getValue()
+				&& m <= config.endMonth.getValue();
+	}
+
+	private static Date toDate(LocalDate date) {
+		return Date.from(
+				date.atStartOfDay(ZoneId.systemDefault()).toInstant()
+		);
+	}
+
+	private static LocalDate max(LocalDate a, LocalDate b) {
+		return a.isAfter(b) ? a : b;
+	}
+
+	private static LocalDate min(LocalDate a, LocalDate b) {
+		return a.isBefore(b) ? a : b;
+	}
+
 
 	TransactionDto generateOperation() {
 		long dateValue = beginDate.getTime() + (long) (RANDOM.nextDouble() * (endDate.getTime() - beginDate.getTime()));

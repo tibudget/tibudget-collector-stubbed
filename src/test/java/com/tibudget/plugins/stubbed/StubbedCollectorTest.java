@@ -3,11 +3,15 @@ package com.tibudget.plugins.stubbed;
 import com.tibudget.api.exceptions.*;
 import com.tibudget.dto.AccountDto;
 import com.tibudget.dto.ItemDto;
+import com.tibudget.dto.RecurringPaymentDto;
 import com.tibudget.dto.TransactionDto;
 import com.tibudget.plugins.stubbed.StubbedCollector.Type;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,6 +22,12 @@ public class StubbedCollectorTest {
 
 	private static final Logger LOG = Logger.getLogger(StubbedCollectorTest.class.getName());
 	public static final double MAX_VALUE = 100000000000.0;
+
+	private static LocalDate toLocalDate(Date date) {
+		return date.toInstant()
+				.atZone(ZoneId.of("Europe/Paris"))
+				.toLocalDate();
+	}
 
 	@Test
 	void testItem() {
@@ -62,6 +72,194 @@ public class StubbedCollectorTest {
 	}
 
 	@Test
+	void testTransactionRecurring() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.setBeginDate(new Date(2026 - 1900, Calendar.FEBRUARY, 1));
+		collector.setEndDate(new Date(2026 - 1900, Calendar.FEBRUARY, 7));
+		collector.validate();
+
+		RecurringPaymentConfig config = new RecurringPaymentConfig(
+				"NETFLIX",
+				"Streaming subscription",
+				5.99,
+				0.0,
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2020, 3, 6),
+				null,
+				null,
+				null
+		);
+
+		List<TransactionDto> transactionDtos = collector.generateRecurringTransactions(config);
+		assertNotNull(transactionDtos);
+		assertEquals(1, transactionDtos.size());
+
+		TransactionDto dto = transactionDtos.get(0);
+		assertNotNull(dto);
+
+		// ==== Recurring payment link ====
+		assertNotNull(dto.getRecurrentPaymentUuid());
+
+		// ==== Identity ====
+		String expectedId = UUID.nameUUIDFromBytes(
+				(config.seed + ":2026-02-06").getBytes()
+		).toString();
+		assertEquals(expectedId, dto.getId());
+
+		// ==== Dates ====
+		LocalDate expectedDate = LocalDate.of(2026, 2, 6);
+		LocalDate actualDate = dto.getDateValue().toInstant()
+				.atZone(ZoneId.of("Europe/Paris"))
+				.toLocalDate();
+
+		assertEquals(expectedDate, actualDate);
+
+		LocalDate executionDate = dto.getDateTransaction().toInstant()
+				.atZone(ZoneId.of("Europe/Paris"))
+				.toLocalDate();
+		assertEquals(expectedDate, executionDate);
+
+		// ==== Label & details ====
+		assertEquals(config.label, dto.getLabel());
+		assertTrue(dto.getDetails().contains("2026-02-06"));
+
+		// ==== Amount ====
+		assertEquals(5.99, dto.getAmount(), 0.0001);
+
+		// ==== Currency ====
+		assertEquals("EUR", dto.getCurrencyCode());
+
+		// ==== Type ====
+		assertEquals(
+				TransactionDto.TransactionDtoType.PAYMENT,
+				dto.getType()
+		);
+	}
+
+	@Test
+	void testTransactionRecurringWithDefaultVariation() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.setBeginDate(new Date(2026 - 1900, Calendar.FEBRUARY, 1));
+		collector.setEndDate(new Date(2026 - 1900, Calendar.FEBRUARY, 7));
+		collector.validate();
+
+		RecurringPaymentConfig config = new RecurringPaymentConfig(
+				"SPOTIFY",
+				"Music subscription",
+				10.00,
+				null, // default ±30%
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2020, 3, 6),
+				null,
+				null,
+				null
+		);
+
+		List<TransactionDto> transactions =
+				collector.generateRecurringTransactions(config);
+
+		assertNotNull(transactions);
+		assertEquals(1, transactions.size());
+
+		TransactionDto dto = transactions.get(0);
+		assertNotNull(dto);
+
+		// Date
+		LocalDate expectedDate = LocalDate.of(2026, 2, 6);
+		LocalDate actualDate = dto.getDateValue().toInstant()
+				.atZone(ZoneId.of("Europe/Paris"))
+				.toLocalDate();
+		assertEquals(expectedDate, actualDate);
+
+		// Amount must be within ±30%
+		double min = 10.00 * 0.70;
+		double max = 10.00 * 1.30;
+		assertTrue(dto.getAmount() >= min);
+		assertTrue(dto.getAmount() <= max);
+	}
+
+	@Test
+	void testTransactionRecurringNegativeAmountWithRatio() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.setBeginDate(new Date(2026 - 1900, Calendar.FEBRUARY, 1));
+		collector.setEndDate(new Date(2026 - 1900, Calendar.FEBRUARY, 7));
+		collector.validate();
+
+		RecurringPaymentConfig config = new RecurringPaymentConfig(
+				"LOAN",
+				"Loan payment",
+				-200.00,
+				0.10, // ±10%
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2020, 3, 6),
+				null,
+				null,
+				null
+		);
+
+		List<TransactionDto> transactions =
+				collector.generateRecurringTransactions(config);
+
+		assertNotNull(transactions);
+		assertEquals(1, transactions.size());
+
+		TransactionDto dto = transactions.get(0);
+		assertNotNull(dto);
+
+		double amount = dto.getAmount();
+
+		// Sign must be preserved
+		assertTrue(amount < 0);
+
+		// Bounds: -180 to -220
+		assertTrue(amount <= -180.00);
+		assertTrue(amount >= -220.00);
+	}
+
+	@Test
+	void testTransactionRecurringWithMonthRestriction() {
+		StubbedCollector collector = new StubbedCollector();
+		collector.setBeginDate(new Date(2026 - 1900, Calendar.FEBRUARY, 1));
+		collector.setEndDate(new Date(2026 - 1900, Calendar.FEBRUARY, 28));
+		collector.validate();
+
+		RecurringPaymentConfig config = new RecurringPaymentConfig(
+				"SCHOOL_FEES",
+				"School fees",
+				231.24,
+				0.0,
+				RecurringPaymentDto.RecurrenceUnit.MONTH,
+				1,
+				LocalDate.of(2020, 1, 6),
+				null,
+				Month.JANUARY,
+				Month.OCTOBER
+		);
+
+		List<TransactionDto> transactions =
+				collector.generateRecurringTransactions(config);
+
+		assertNotNull(transactions);
+		assertEquals(1, transactions.size());
+
+		TransactionDto dto = transactions.get(0);
+		assertNotNull(dto);
+
+		LocalDate date = dto.getDateValue().toInstant()
+				.atZone(ZoneId.of("Europe/Paris"))
+				.toLocalDate();
+
+		// February must be allowed
+		assertEquals(Month.FEBRUARY, date.getMonth());
+
+		// Fixed amount
+		assertEquals(231.24, dto.getAmount(), 0.0001);
+	}
+
+	@Test
 	void testRandom() throws MessagesException {
 		StubbedCollector collector = new StubbedCollector();
 		collector.setAccountPayment(new AccountDto(
@@ -72,8 +270,11 @@ public class StubbedCollectorTest {
 				0.0
 		));
 
-		Date beginDate = new Date();
-		Date endDate = new Date(beginDate.getTime() + 1000L * 60 * 60 * 24 * 7);
+		ZoneId zone = ZoneId.of("Europe/Paris");
+
+		LocalDate today = LocalDate.now(zone);
+		Date beginDate = Date.from(today.atStartOfDay(zone).toInstant());
+		Date endDate = Date.from(today.plusDays(7).atStartOfDay(zone).toInstant());
 
 		collector.setBeginDate(beginDate);
 		collector.setEndDate(endDate);
@@ -95,8 +296,8 @@ public class StubbedCollectorTest {
 							+ " val=" + opDto.getAmount());
 
 			assertNotNull(opDto.getDateValue());
-			assertTrue(opDto.getDateValue().getTime() >= beginDate.getTime());
-			assertTrue(opDto.getDateValue().getTime() <= endDate.getTime());
+			assertTrue(opDto.getDateValue().getTime() >= beginDate.getTime(), opDto.getDateValue() + " < " + beginDate);
+			assertTrue(opDto.getDateValue().getTime() <= endDate.getTime(), opDto.getDateValue() + " > " + endDate);
 
 			assertNotNull(opDto.getDateTransaction());
 			assertTrue(opDto.getDateTransaction().getTime() >= beginDate.getTime());
@@ -107,7 +308,9 @@ public class StubbedCollectorTest {
 
 			assertTrue(opDto.getAmount() <= MAX_VALUE && opDto.getAmount() >= -MAX_VALUE);
 
-			opCount++;
+			if (opDto.getRecurrentPaymentUuid() == null) {
+				opCount++;
+			}
 		}
 
 		assertEquals(50 * 4 + 1, opCount);
