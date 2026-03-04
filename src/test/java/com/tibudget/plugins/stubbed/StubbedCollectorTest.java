@@ -81,6 +81,7 @@ public class StubbedCollectorTest {
 		RecurringPaymentConfig config = new RecurringPaymentConfig(
 				"NETFLIX",
 				"Streaming subscription",
+				UUID.randomUUID().toString(),
 				5.99,
 				0.0,
 				RecurringPaymentDto.RecurrenceUnit.MONTH,
@@ -147,6 +148,7 @@ public class StubbedCollectorTest {
 		RecurringPaymentConfig config = new RecurringPaymentConfig(
 				"SPOTIFY",
 				"Music subscription",
+				UUID.randomUUID().toString(),
 				10.00,
 				null, // default ±30%
 				RecurringPaymentDto.RecurrenceUnit.MONTH,
@@ -190,6 +192,7 @@ public class StubbedCollectorTest {
 		RecurringPaymentConfig config = new RecurringPaymentConfig(
 				"LOAN",
 				"Loan payment",
+				UUID.randomUUID().toString(),
 				-200.00,
 				0.10, // ±10%
 				RecurringPaymentDto.RecurrenceUnit.MONTH,
@@ -229,6 +232,7 @@ public class StubbedCollectorTest {
 		RecurringPaymentConfig config = new RecurringPaymentConfig(
 				"SCHOOL_FEES",
 				"School fees",
+				UUID.randomUUID().toString(),
 				231.24,
 				0.0,
 				RecurringPaymentDto.RecurrenceUnit.MONTH,

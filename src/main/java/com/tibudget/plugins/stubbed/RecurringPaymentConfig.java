@@ -9,6 +9,7 @@ public class RecurringPaymentConfig {
 
     public final String seed;
     public final String label;
+    public final String accountUuid;
     public final double amount;
     public final Double ratio;
     public final RecurringPaymentDto.RecurrenceUnit unit;
@@ -21,6 +22,7 @@ public class RecurringPaymentConfig {
     public RecurringPaymentConfig(
             String seed,
             String label,
+            String accountUuid,
             double amount,
             Double ratio,
             RecurringPaymentDto.RecurrenceUnit unit,
@@ -32,6 +34,7 @@ public class RecurringPaymentConfig {
     ) {
         this.seed = seed;
         this.label = label;
+        this.accountUuid = accountUuid;
         this.amount = amount;
         this.ratio = ratio;
         this.unit = unit;

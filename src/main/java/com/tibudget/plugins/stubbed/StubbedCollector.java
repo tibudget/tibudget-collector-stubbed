@@ -234,6 +234,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
 				"NETFLIX",
 				"Streaming subscription",
+				accountShopping.getUuid(),
 				5.99,
 				0.0,
 				RecurringPaymentDto.RecurrenceUnit.MONTH,
@@ -244,13 +245,14 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				null
 		)));
 		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
-				"SCHOOL_FEES",
-				"School fees",
-				231.24,
+				"BANK_FEE",
+				"Bank fee",
+				accountPayment.getUuid(),
+				-14.99,
 				0.05,
 				RecurringPaymentDto.RecurrenceUnit.MONTH,
 				1,
-				LocalDate.of(2026, 1, 5),
+				LocalDate.of(2026, 1, 21),
 				LocalDate.of(2026, 10, 31),
 				Month.JANUARY,
 				Month.OCTOBER
@@ -258,7 +260,8 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 		transactionDtos.addAll(generateRecurringTransactions(new RecurringPaymentConfig(
 				"WEEKLY_SBU",
 				"Weekly monday gain",
-				-10.0,
+				accountSaving.getUuid(),
+				10.0,
 				null,
 				RecurringPaymentDto.RecurrenceUnit.WEEK,
 				1,
@@ -281,7 +284,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				datePurchase,
 				OperationLabelGenerator.generateOperationLabel(),
 				OperationLabelGenerator.generateOperationDetails(15),
-				RANDOM.nextDouble() * 1000 - 500,
+				-RANDOM.nextDouble() * 1000,
 				"EUR"
 		);
 		double amount = 0.0;
@@ -423,6 +426,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 			date = increment(date, config);
 		}
 		LocalDate end = config.end == null ? globalEnd : min(globalEnd, config.end);
+		LocalDate today = LocalDate.now(ZoneId.systemDefault());
 
 		while (!date.isAfter(end)) {
 
@@ -466,6 +470,12 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				);
 
 				dto.setRecurrentPaymentUuid(recurringPayment.getUuid());
+				if (date.isAfter(today)) {
+					dto.setState(TransactionDto.TransactionDtoState.PENDING);
+				}
+				else {
+					dto.setState(TransactionDto.TransactionDtoState.COMPLETED);
+				}
 				result.add(dto);
 			}
 
