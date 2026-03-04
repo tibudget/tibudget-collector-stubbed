@@ -89,6 +89,7 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				if (this.accountPayment == null) {
 					this.accountPayment = new AccountDto(AccountDto.AccountDtoType.PAYMENT, "My checking account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountPayment.setId("STUBBED_PAYMENT");
+					this.accountPayment.setTimeZoneId(TimeZone.getTimeZone("Europe/Paris").getID());
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CARD, "1234"));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accountPayment.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.CHECK));
@@ -98,17 +99,20 @@ public class StubbedCollector extends AbstractCollectorPlugin {
 				if (this.accountSaving == null) {
 					this.accountSaving = new AccountDto(AccountDto.AccountDtoType.SAVING, "My saving account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountSaving.setId("STUBBED_SAVING");
+					this.accountPayment.setTimeZoneId(TimeZone.getTimeZone("Europe/Paris").getID());
 					this.accountSaving.addPaymentMethod(new PaymentMethodDto(PaymentDto.PaymentDtoType.TRANSFER));
 					this.accounts.put(this.accountSaving.getId(), this.accountSaving);
 				}
 				if (this.accountShopping == null) {
 					this.accountShopping = new AccountDto(AccountDto.AccountDtoType.SHOPPING, "My shopping account", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 12.32);
 					this.accountShopping.setId("STUBBED_SHOPPING");
+					this.accountPayment.setTimeZoneId(TimeZone.getTimeZone("Europe/Paris").getID());
 					this.accounts.put(this.accountShopping.getId(), this.accountShopping);
 				}
 				if (this.accountLoyalty == null) {
 					this.accountLoyalty = new AccountDto(AccountDto.AccountDtoType.LOYALTY_CARD, "My loyalty", COUNTERPARTY_UUID, Currency.getInstance(Locale.getDefault()).getCurrencyCode(), 0.0);
 					this.accountLoyalty.setId("STUBBED_LOYALTY_CARD");
+					this.accountPayment.setTimeZoneId(TimeZone.getTimeZone("Europe/Paris").getID());
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BAR_CODE_TYPE, BarcodeTypeEnum.EAN_13.name());
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_REFERENCE, "978020137862");
 					this.accountLoyalty.setMetadata(AccountDto.METADATA_LOYALTY_CARD_BG_COLOR, "#00ACDF");
