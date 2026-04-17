@@ -271,6 +271,7 @@ public class StubbedCollectorTest {
 				"my account",
 				"StubbedCollectorTest",
 				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				TimeZone.getDefault().getID(),
 				0.0
 		));
 
@@ -409,6 +410,7 @@ public class StubbedCollectorTest {
 				"my account",
 				"StubbedCollectorTest",
 				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				TimeZone.getDefault().getID(),
 				0.0
 		));
 
@@ -427,6 +429,7 @@ public class StubbedCollectorTest {
 				"my account",
 				"StubbedCollectorTest",
 				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				TimeZone.getDefault().getID(),
 				0.0
 		));
 
@@ -448,6 +451,7 @@ public class StubbedCollectorTest {
 				"my account",
 				"StubbedCollectorTest",
 				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				TimeZone.getDefault().getID(),
 				0.0
 		));
 
@@ -471,6 +475,7 @@ public class StubbedCollectorTest {
 				"my account",
 				"StubbedCollectorTest",
 				Currency.getInstance(Locale.getDefault()).getCurrencyCode(),
+				TimeZone.getDefault().getID(),
 				0.0
 		));
 
